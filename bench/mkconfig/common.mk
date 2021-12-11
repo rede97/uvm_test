@@ -11,7 +11,7 @@ WORK_SOURCES = $(wildcard $(WORK_DIR)/*.v)
 TEST_SOURCES = $(wildcard $(TEST_DIR)/*.sv) $(wildcard $(TEST_DIR)/*.v)
 
 TESTBENCH_SOURCES = $(shell ls $(TEST_DIR)/*_tb.sv)
-TESTBENCHES = $(shell echo $(TESTBENCH_SOURCES) | sed 's:$(TEST_DIR)/::g' | sed 's:\.v::g')
+TESTBENCHES = $(shell echo $(TESTBENCH_SOURCES) | sed 's:$(TEST_DIR)/::g' | sed 's:\.sv::g')
 
 all: $(OUT_DIR) $(LOG_DIR) simulate
 

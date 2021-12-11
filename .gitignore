@@ -1,0 +1,7 @@
+component.xml
+.vscode/
+test/
+work/
+bench/sim/log/
+modelsim.ini
+*.gtkw

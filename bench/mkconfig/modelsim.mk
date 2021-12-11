@@ -56,32 +56,34 @@ LIB_SV_STD = $(MODELSIM_DIR)/sv_std
 LIB_WORK = work
 LIB_TEST = test
 
-UVM_HOME ?= $(MODELSIM_DIR)/../verilog_src/uvm-1.2
-WORK_HOME ?= $(WORK_DIR)
-UVM_DPI_HOME ?= $(MODELSIM_DIR)/../uvm-1.1d/win64
-
-WORK_OBJECTS = $(shell echo $(WORK_SOURCES) | sed 's:$(WORK_DIR):./$(LIB_WORK):g' | sed 's:\.v:/_primary.dat:g')
-TEST_OBJECTS = $(shell echo $(TEST_SOURCES) | sed 's:$(TEST_DIR):./$(LIB_TEST):g' | sed 's:\.sv:/_primary.dat:g')
-
 CLI_STARTUP_FILE = ./tcl/cli_startup.do
 
-work_library: $(LIB_WORK) $(WORK_OBJECTS)
+UVM_HOME ?= 
+UVM_DPI_HOME ?= 
+WORL_HOME = $(WORK_DIR)
 
-$(WORK_OBJECTS): $(WORK_SOURCES)
-	$(V)$(VLOG) -work $(LIB_WORK) +incdir+$(WORK_DIR) -nocovercells -O0 $?
+ifeq ($(UVM_HOME),)
+$(error env 'UVM_HOME' undefined to src)
+endif
+
+ifeq ($(UVM_DPI_HOME),)
+$(error env 'UVM_DPI_HOME' undefined, to binary)
+endif
+
+work_library: $(LIB_WORK) work_objects
+
+work_objects: $(WORK_SOURCES)
+	$(V)$(VLOG) -work $(LIB_WORK) +incdir+$(WORK_DIR) $?
 	
 $(LIB_WORK) :
 	$(V)echo "creating library $@ ..."
 	$(V)$(VLIB) $(LIB_WORK)
 	$(V)$(VMAP) $(LIB_WORK) $(LIB_WORK)
 
-test_library: $(LIB_TEST) $(TEST_OBJECTS) uvm_pkg
+test_library: $(LIB_TEST) test_objects
 
-uvm_pkg:
-	$(V)$(VLOG) -work $(LIB_TEST) +incdir+$(WORK_DIR) +incdir+$(TEST_DIR) +incdir+$(UVM_HOME)/src  -L mtiAvm -L mtiOvm -L mtiUvm -L mtiUPF -nocovercells -O4 $(UVM_HOME)/src/uvm_pkg.sv
-
-$(TEST_OBJECTS): $(TEST_SOURCES)
-	$(V)$(VLOG) -work $(LIB_TEST) +incdir+$(WORK_DIR) +incdir+$(TEST_DIR) +incdir+$(UVM_HOME)/src  -L mtiAvm -L mtiOvm -L mtiUvm -L mtiUPF -nocovercells -O4 $?
+test_objects: $(TEST_SOURCES)
+	$(V)$(VLOG) -work $(LIB_TEST) +incdir+$(WORK_DIR) +incdir+$(TEST_DIR) +incdir+$(UVM_HOME)/src -L mtiAvm -L mtiOvm -L mtiUvm -L mtiUPF $?
 
 $(LIB_TEST) : 
 	$(V)echo "creating library $@ ..."
@@ -91,7 +93,7 @@ $(LIB_TEST) :
 compile: work_library test_library
 
 %_tb: compile
-	$(V)$(VSIM) -c -L $(RUN_DIR)/$(LIB_WORK) -do $(CLI_STARTUP_FILE) $(LIB_TEST).$@ -voptargs=+acc=npr
+	$(V)$(VSIM) -c -L $(RUN_DIR)/$(LIB_WORK) -sv_lib $(UVM_DPI_HOME)/uvm_dpi +UVM_NO_RELNOTES -do $(CLI_STARTUP_FILE) $(LIB_TEST).$@
 	-$(V)mv -f *.vcd $(OUT_DIR);
 	-$(V)mv -f *.log $(LOG_DIR);
 	-$(V)mv -f transcript $(LOG_DIR);
